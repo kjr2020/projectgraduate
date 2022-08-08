@@ -3,14 +3,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeoutException;
 
 public class TaskManager {
     private static final Logger LOG = LoggerFactory.getLogger(TaskManager.class);
     private String yamlFile;
     private String executeFile;
-    private int cpuLimit;
-    private int memLimit;
     private static ConnectionFactory factory;
     protected static Connection connection;
     protected static Channel channel;
@@ -25,20 +24,15 @@ public class TaskManager {
     public TaskManager(String args[]) throws Exception {
         this.yamlFile = args[0];
         this.executeFile = args[1];
-        this.cpuLimit = Integer.parseInt(args[2]);
-        this.memLimit = Integer.parseInt(args[3]);
-        connectQueue();
+        connectQueueChannel();
     }
 
     public static void main(String args[]){
         TaskManager taskManager;
-        boolean result = false;
         try{
             taskManager = new TaskManager(args);
-            if(!result){
-                LOG.info("Can't create TaskManager\n[1]yamlFile\n[2]executeFile\n[3]cpuLimit\n[4]memLimit");
-            }
         } catch (Exception e){
+            LOG.info("Can't create TaskManager\n[1]yamlFile\n[2]executeFile");
             e.printStackTrace();
         }
     }
@@ -55,13 +49,8 @@ public class TaskManager {
         }
     }
 
-    public void changeScale(String yamlFile, int cpuLim, int memLim){
-        Process process;
-        try{
-            process = Runtime.getRuntime().exec("kubernetes scale code");
-        } catch (Exception e){
-            LOG.info("Can't change container resources");
-        }
+    public void changeScale(int executeNum){
+
     }
 
     public void getExecuteTime(){
@@ -69,19 +58,19 @@ public class TaskManager {
             channel.basicConsume(EX_QUEUE_NAME, false, "consumerTag", new DefaultConsumer(channel) {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    long deliveryTag = envelope.getDeliveryTag();
                     if(channel.messageCount(EX_QUEUE_NAME) == 0) {
-                        try {
-                            channel.close();
-                        } catch (TimeoutException e){
-                            LOG.info("channel close failed...");
-                        }
+                        return;
                     }
 
+                    String originMessage = body.toString();
+                    String[] message = originMessage.split(", ");
 
+                    channel.basicAck(deliveryTag, false);
                 }
             });
         } catch(IOException e){
-            LOG.info("execute time queue connection fail...");
+            LOG.info("Execute time queue connection fail...");
         }
     }
 
@@ -89,23 +78,34 @@ public class TaskManager {
 
     }
 
-    public void connectQueue() throws Exception{
-        factory = new ConnectionFactory();
-        factory.setUsername(USER_NAME);
-        factory.setPassword(PASSWORD);
-        factory.setVirtualHost(VIRTUAL_HOST);
-        factory.setHost(HOST);
-        factory.setPort(PORT);
+    public void connectQueueChannel(){
+        try {
+            factory = new ConnectionFactory();
+            factory.setUsername(USER_NAME);
+            factory.setPassword(PASSWORD);
+            factory.setVirtualHost(VIRTUAL_HOST);
+            factory.setHost(HOST);
+            factory.setPort(PORT);
 
-        connection = factory.newConnection();
-        channel = connection.createChannel();
-        while(true){
-            Thread.sleep(5000);
-            getExecuteTime();
-            if(channel.consumerCount(QUEUE_NAME) == 0){
-                connection.close();
-                return;
+            connection = factory.newConnection();
+            channel = connection.createChannel();
+        }catch (Exception e){
+            LOG.info("Can't connect Queue");
+        }
+    }
+
+    public void checkExecuteTime(){
+        try {
+            while (true){
+                Thread.sleep(5000);
+                getExecuteTime();
+                if(channel.consumerCount(QUEUE_NAME) == 0){
+                    connection.close();
+                    return;
+                }
             }
+        }catch (Exception e){
+            LOG.info("Thread sleep failed..");
         }
     }
 }
