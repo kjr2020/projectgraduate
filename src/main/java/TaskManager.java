@@ -3,8 +3,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
-import java.util.concurrent.TimeoutException;
 
 public class TaskManager {
     private static final Logger LOG = LoggerFactory.getLogger(TaskManager.class);
@@ -20,10 +18,17 @@ public class TaskManager {
     static final String QUEUE_NAME = "ligand-test";
     static final String EX_QUEUE_NAME = "executeTime-queue";
     static final int PORT = 5672;
+    private int testContainerTime;
+    private int executeContainerTime;
+    private int numberOfExecutors;
+    private int prevNumberOfExecutors;
 
     public TaskManager(String args[]) throws Exception {
         this.yamlFile = args[0];
         this.executeFile = args[1];
+        this.numberOfExecutors = Integer.parseInt(args[2]);
+        this.prevNumberOfExecutors = 0;
+        createContainer(yamlFile, numberOfExecutors);
         connectQueueChannel();
     }
 
@@ -32,20 +37,23 @@ public class TaskManager {
         try{
             taskManager = new TaskManager(args);
         } catch (Exception e){
-            LOG.info("Can't create TaskManager\n[1]yamlFile\n[2]executeFile");
+            LOG.info("Can't create TaskManager\nCheck args\n[1]yamlFile\n[2]executeFile\n[3]numberOfExecutors");
             e.printStackTrace();
         }
     }
 
-    public void createContainer(String containerName){
+    public void createContainer(String containerName, int numberOfExecutors){
         Process process;
         try {
             process = Runtime.getRuntime().exec("kubectl apply -f " + containerName);
             process.waitFor();
             process.destroy();
+
+            process = Runtime.getRuntime().exec("kubectl exec " + containerName + " /bin/bash");
+            Thread.sleep(5000);
+            process.destroy();
         } catch (Exception e){
             LOG.info("Fail to create Container.");
-            e.printStackTrace();
         }
     }
 
@@ -59,12 +67,23 @@ public class TaskManager {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                     long deliveryTag = envelope.getDeliveryTag();
-                    if(channel.messageCount(EX_QUEUE_NAME) == 0) {
+                    if(channel.messageCount(EX_QUEUE_NAME) <= 1) {
                         return;
                     }
 
                     String originMessage = body.toString();
                     String[] message = originMessage.split(", ");
+
+                    if(message[0].equals("Executor")){
+                        testContainerTime = Integer.parseInt(message[1]);
+                    }else if(message[0].equals("Test")){
+                        executeContainerTime = Integer.parseInt(message[1]);
+                    } else {
+                        LOG.info("Message Detection Error");
+                        return;
+                    }
+
+                    overProvisioning(testContainerTime, executeContainerTime);
 
                     channel.basicAck(deliveryTag, false);
                 }
@@ -74,8 +93,15 @@ public class TaskManager {
         }
     }
 
-    public void overProvisioning(){
-
+    public void overProvisioning(int testContainerTime, int executeContainerTime){
+        if((testContainerTime * numberOfExecutors) < executeContainerTime){
+            prevNumberOfExecutors = numberOfExecutors;
+            numberOfExecutors *= 2;
+            changeScale((numberOfExecutors));
+        } else{
+            numberOfExecutors = ((numberOfExecutors - prevNumberOfExecutors)/2) + prevNumberOfExecutors;
+            changeScale(numberOfExecutors);
+        }
     }
 
     public void connectQueueChannel(){
