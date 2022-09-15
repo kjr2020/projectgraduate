@@ -15,7 +15,7 @@ public class TaskManager {
     static final String PASSWORD = "1234";
     static final String VIRTUAL_HOST = "/";
     static final String HOST = "120.70.10.100";
-    static final String QUEUE_NAME = "ligand-test";
+    static final String QUEUE_NAME = "graduate-queue";
     static final String EX_QUEUE_NAME = "executeTime-queue";
     static final int PORT = 5672;
     private int testContainerTime;
@@ -33,13 +33,14 @@ public class TaskManager {
     }
 
     public static void main(String args[]){
-        TaskManager taskManager;
+        TaskManager taskManager = null;
         try{
             taskManager = new TaskManager(args);
         } catch (Exception e){
             LOG.info("Can't create TaskManager\nCheck args\n[1]yamlFile\n[2]executeFile\n[3]numberOfExecutors");
             e.printStackTrace();
         }
+        taskManager.checkExecuteTime();
     }
 
     public void createContainer(String containerName, int numberOfExecutors){

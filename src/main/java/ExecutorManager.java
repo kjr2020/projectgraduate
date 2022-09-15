@@ -5,9 +5,11 @@ public class ExecutorManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorManager.class);
     private int numberOfExecutors;
+    private int[] executorArr;
 
     ExecutorManager(int numberOfExecutors){
         this.numberOfExecutors = numberOfExecutors;
+        executorArr = new int[numberOfExecutors];
     }
 
     static void main(String args[]){
@@ -15,6 +17,16 @@ public class ExecutorManager {
             ExecutorManager executorManager = new ExecutorManager(Integer.parseInt(args[0]));
         } catch (Exception e){
             LOG.info("Can't create ExecutorManager\nCheck args\n[1]Number of Executors.");
+        }
+    }
+
+    private void checkExecutors(){
+        while (true) {
+            try {
+                Thread.sleep(5000);
+            } catch (Exception e) {
+                LOG.info("Check Executors Err");
+            }
         }
     }
 
