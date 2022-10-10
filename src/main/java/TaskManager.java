@@ -1,111 +1,48 @@
 import com.rabbitmq.client.*;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
+import org.slf4j.LoggerFactory;;import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 public class TaskManager {
     private static final Logger LOG = LoggerFactory.getLogger(TaskManager.class);
-    private String yamlFile;
+    private String podName;
     private String executeFile;
-    private static ConnectionFactory factory;
-    protected static Connection connection;
-    protected static Channel channel;
+    private String numberOfExecutors;
+    private String compareQueueName = "compare-queue";
+    private String executeTimeQueue = "executeTime-queue";
+    private String taskQueue = "ligand-queue";
+
     static final String USER_NAME = "master";
     static final String PASSWORD = "1234";
     static final String VIRTUAL_HOST = "/";
-    static final String HOST = "120.70.10.100";
-    static final String QUEUE_NAME = "graduate-queue";
-    static final String EX_QUEUE_NAME = "executeTime-queue";
     static final int PORT = 5672;
-    private int testContainerTime;
-    private int executeContainerTime;
-    private int numberOfExecutors;
-    private int prevNumberOfExecutors;
+    static Channel channel;
+    static String HOST = "120.70.10.100";
+    private static Connection connection;
+    private static ConnectionFactory factory;
+
 
     public TaskManager(String args[]) throws Exception {
-        this.yamlFile = args[0];
+        this.podName = args[0];
         this.executeFile = args[1];
-        this.numberOfExecutors = Integer.parseInt(args[2]);
-        this.prevNumberOfExecutors = 0;
-        createContainer(yamlFile, numberOfExecutors);
-        connectQueueChannel();
+        this.numberOfExecutors = args[2];
+        init(podName, numberOfExecutors);
     }
 
     public static void main(String args[]){
         TaskManager taskManager = null;
         try{
             taskManager = new TaskManager(args);
+            taskManager.createTaskQueue();
+            taskManager.createCompareQueue();
+            taskManager.createExecuteTimeQueue();
         } catch (Exception e){
             LOG.info("Can't create TaskManager\nCheck args\n[1]yamlFile\n[2]executeFile\n[3]numberOfExecutors");
             e.printStackTrace();
         }
-        taskManager.checkExecuteTime();
     }
 
-    public void createContainer(String containerName, int numberOfExecutors){
-        Process process;
-        try {
-            process = Runtime.getRuntime().exec("kubectl apply -f " + containerName);
-            process.waitFor();
-            process.destroy();
-
-            process = Runtime.getRuntime().exec("kubectl exec " + containerName + " /bin/bash");
-            Thread.sleep(5000);
-            process.destroy();
-        } catch (Exception e){
-            LOG.info("Fail to create Container.");
-        }
-    }
-
-    public void changeScale(int executeNum){
-
-    }
-
-    public void getExecuteTime(){
-        try {
-            channel.basicConsume(EX_QUEUE_NAME, false, "consumerTag", new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    long deliveryTag = envelope.getDeliveryTag();
-                    if(channel.messageCount(EX_QUEUE_NAME) <= 1) {
-                        return;
-                    }
-
-                    String originMessage = body.toString();
-                    String[] message = originMessage.split(", ");
-
-                    if(message[0].equals("Executor")){
-                        testContainerTime = Integer.parseInt(message[1]);
-                    }else if(message[0].equals("Test")){
-                        executeContainerTime = Integer.parseInt(message[1]);
-                    } else {
-                        LOG.info("Message Detection Error");
-                        return;
-                    }
-
-                    overProvisioning(testContainerTime, executeContainerTime);
-
-                    channel.basicAck(deliveryTag, false);
-                }
-            });
-        } catch(IOException e){
-            LOG.info("Execute time queue connection fail...");
-        }
-    }
-
-    public void overProvisioning(int testContainerTime, int executeContainerTime){
-        if((testContainerTime * numberOfExecutors) < executeContainerTime){
-            prevNumberOfExecutors = numberOfExecutors;
-            numberOfExecutors *= 2;
-            changeScale((numberOfExecutors));
-        } else{
-            numberOfExecutors = ((numberOfExecutors - prevNumberOfExecutors)/2) + prevNumberOfExecutors;
-            changeScale(numberOfExecutors);
-        }
-    }
-
-    public void connectQueueChannel(){
+    public void connectRBMQServer(){
         try {
             factory = new ConnectionFactory();
             factory.setUsername(USER_NAME);
@@ -113,26 +50,54 @@ public class TaskManager {
             factory.setVirtualHost(VIRTUAL_HOST);
             factory.setHost(HOST);
             factory.setPort(PORT);
-
             connection = factory.newConnection();
             channel = connection.createChannel();
-        }catch (Exception e){
-            LOG.info("Can't connect Queue");
+        }catch (IOException | TimeoutException e){
+            LOG.info("RBMQServer connection failed..");
         }
     }
 
-    public void checkExecuteTime(){
+    public void init(String podName, String numberOfExecutors){
+
+        connectRBMQServer();
+
+        Process process;
         try {
-            while (true){
-                Thread.sleep(5000);
-                getExecuteTime();
-                if(channel.consumerCount(QUEUE_NAME) == 0){
-                    connection.close();
-                    return;
-                }
-            }
-        }catch (Exception e){
-            LOG.info("Thread sleep failed..");
+            process = Runtime.getRuntime().exec("kubectl apply -f " + podName +".yaml");
+            process.waitFor();
+            process.destroy();
+        } catch (Exception e) {
+            LOG.info("Fail to apply Yaml File.");
+        }
+        try{
+            process = Runtime.getRuntime().exec("kubectl exec " + podName + " -- java -jar ExecutorManager.jar " + numberOfExecutors);
+            Thread.sleep(5000);
+        } catch (Exception e){
+            LOG.info("Fail to Start Execute File.");
+        }
+    }
+
+    public void createCompareQueue(){
+        try{
+            channel.queueDeclare(compareQueueName, true, false, false, null);
+        }catch (IOException e){
+            LOG.warn("Compare Queue Declare Failed..");
+        }
+    }
+
+    public void createExecuteTimeQueue(){
+        try{
+            channel.queueDeclare(executeTimeQueue, true, false, false, null);
+        }catch (IOException e){
+            LOG.warn("Execute Time Queue Declare Failed..");
+        }
+    }
+
+    public void createTaskQueue(){
+        try{
+            channel.queueDeclare(taskQueue, true, false, false, null);
+        }catch (IOException e){
+            LOG.warn("Task Queue Declare Failed..");
         }
     }
 }
