@@ -22,6 +22,8 @@ public class ExecutorManager {
     static final String HOST = "120.70.10.100";
     static final String QUEUE_NAME = "ligand-queue";
     static final String EX_QUEUE_NAME = "executeTime-queue";
+    static final String CONTAINER_MANAGE_FILE_NAME = "numberOFExecutors";
+    static final String RESULT_FILE_NAME= "graduateResult";
     static final int PORT = 5672;
     private int testContainerTime = 0;
     private int executeContainerTime = 0;
@@ -48,6 +50,13 @@ public class ExecutorManager {
     }
 
     public void init(int numberOfExecutors){
+        try {
+            bw = new BufferedWriter(new FileWriter(CONTAINER_MANAGE_FILE_NAME));
+            bw.write(numberOfExecutors);
+            bw.close();
+        } catch (IOException e){
+            LOG.warn("BufferedWriter opne failed..");
+        }
         try {
             for (int offset = 0; offset < numberOfExecutors; offset++) {
                 executors.add(createExecutors(offset));
@@ -98,8 +107,9 @@ public class ExecutorManager {
                             channel.close();
                             connection.close();
 
-                            bw = new BufferedWriter(new FileWriter("graduateResult"));
+                            bw = new BufferedWriter(new FileWriter(RESULT_FILE_NAME));
                             bw.write("Project Makespan: " + (System.currentTimeMillis() - startTime));
+                            bw.close();
                         } catch (TimeoutException e){
                             LOG.warn("Close Failed..");
                         }
@@ -112,7 +122,7 @@ public class ExecutorManager {
     }
 
     public void overProvisioning(int testContainerTime, int executeContainerTime) throws IOException {
-        bw = new BufferedWriter(new FileWriter("numberOFExecutors"));
+        bw = new BufferedWriter(new FileWriter(CONTAINER_MANAGE_FILE_NAME));
         if((testContainerTime * numberOfExecutors) > executeContainerTime){
             prevNumberOfExecutors = numberOfExecutors;
             numberOfExecutors *= 2;
@@ -125,6 +135,7 @@ public class ExecutorManager {
             numberOfExecutors = ((numberOfExecutors - prevNumberOfExecutors)/2) + prevNumberOfExecutors;
             bw.write(numberOfExecutors);
         }
+        bw.close();
     }
 
     public void connectQueueChannel(){
