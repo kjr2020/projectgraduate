@@ -26,6 +26,9 @@ public class TaskManager {
         this.podName = args[0];
         this.executeFile = args[1];
         this.numberOfExecutors = args[2];
+        createTaskQueue();
+        createCompareQueue();
+        createExecuteTimeQueue();
         init(podName, numberOfExecutors);
     }
 
@@ -33,9 +36,6 @@ public class TaskManager {
         TaskManager taskManager = null;
         try{
             taskManager = new TaskManager(args);
-            taskManager.createTaskQueue();
-            taskManager.createCompareQueue();
-            taskManager.createExecuteTimeQueue();
         } catch (Exception e){
             LOG.info("Can't create TaskManager\nCheck args\n[1]yamlFile\n[2]executeFile\n[3]numberOfExecutors");
             e.printStackTrace();
@@ -64,7 +64,6 @@ public class TaskManager {
         Process process;
         try {
             process = Runtime.getRuntime().exec("kubectl apply -f " + podName +".yaml");
-            process.waitFor();
             process.destroy();
         } catch (Exception e) {
             LOG.info("Fail to apply Yaml File.");
