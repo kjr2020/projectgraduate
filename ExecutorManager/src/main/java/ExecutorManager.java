@@ -58,7 +58,8 @@ public class ExecutorManager {
             LOG.warn("BufferedWriter opne failed..");
         }
         try {
-            for (int offset = 0; offset < numberOfExecutors; offset++) {
+            executors.add(Runtime.getRuntime().exec("java -jar FirstExecutor.jar"));
+            for (int offset = 1; offset < numberOfExecutors; offset++) {
                 executors.add(createExecutors(offset));
             }
         }catch (Exception e){
