@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="TaskExecutors:jar">
+    <output-path>$PROJECT_DIR$/Outputs</output-path>
+    <root id="archive" name="TaskExecutors.jar">
+      <element id="module-output" name="TaskExecutors" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/TaskExecutors/out/artifacts/TaskExecutors_jar/TaskExecutors.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

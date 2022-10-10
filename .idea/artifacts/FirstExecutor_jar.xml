@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="FirstExecutor:jar">
+    <output-path>$PROJECT_DIR$/Outputs</output-path>
+    <root id="archive" name="FirstExecutor.jar">
+      <element id="module-output" name="FirstExecutor" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/FirstExecutor/out/artifacts/FirstExecutor_jar/FirstExecutor.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

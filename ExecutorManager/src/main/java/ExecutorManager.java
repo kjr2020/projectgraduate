@@ -90,6 +90,7 @@ public class ExecutorManager {
                         LOG.info("Current Arr Size: " + String.valueOf(executors.size()));
                     }
 
+                    LOG.info("Real Process: " + executors.size());
                     channel.basicAck(deliveryTag, false);
 
                     if(channel.consumerCount(QUEUE_NAME) == 0){

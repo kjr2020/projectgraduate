@@ -71,8 +71,16 @@ public class TaskManager {
         }
         try{
             process = Runtime.getRuntime().exec("kubectl exec " + podName + " -- java -jar ExecutorManager.jar " + numberOfExecutors);
+            process.destroy();
         } catch (Exception e){
             LOG.info("Fail to Start Execute File.");
+        }
+
+        try{
+            process = Runtime.getRuntime().exec("kubectl apply -f testContainer.yaml");
+            process.destroy();
+        } catch (IOException e){
+            LOG.info("Test Container Create Failed..");
         }
     }
 
