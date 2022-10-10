@@ -28,6 +28,7 @@ public class ExecutorManager {
     private int prevNumberOfExecutors;
     private ArrayList<Process> executors;
     private BufferedWriter bw;
+    private long startTime;
 
     ExecutorManager(int numberOfExecutors){
         this.numberOfExecutors = numberOfExecutors;
@@ -66,6 +67,7 @@ public class ExecutorManager {
     }
 
     public void getExecuteTime(){
+        startTime = System.currentTimeMillis();
         try {
             channel.basicConsume(EX_QUEUE_NAME, false, "ExecutorManager", new DefaultConsumer(channel) {
                 @Override
@@ -94,6 +96,9 @@ public class ExecutorManager {
                         try {
                             channel.close();
                             connection.close();
+
+                            bw = new BufferedWriter(new FileWriter("graduateResult"));
+                            bw.write("Project Makespan: " + (System.currentTimeMillis() - startTime));
                         } catch (TimeoutException e){
                             LOG.warn("Close Failed..");
                         }

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="FirstExecutor1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/FirstExecutor/out/artifacts/FirstExecutor_jar/FirstExecutor.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

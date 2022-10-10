@@ -71,7 +71,6 @@ public class TaskManager {
         }
         try{
             process = Runtime.getRuntime().exec("kubectl exec " + podName + " -- java -jar ExecutorManager.jar " + numberOfExecutors);
-            Thread.sleep(5000);
         } catch (Exception e){
             LOG.info("Fail to Start Execute File.");
         }

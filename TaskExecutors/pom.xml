@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
-    <artifactId>TaskManager</artifactId>
+    <artifactId>TaskExecutors</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -90,19 +90,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>TaskManager.TaskManager</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>ExecutorManager.ExecutorManager</mainClass>
+                            <mainClass>TaskExecutors.TaskExecutors</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

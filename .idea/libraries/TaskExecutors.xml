@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="TaskExecutors">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/TaskExecutors/out/artifacts/TaskExecutors_jar/TaskExecutors.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
