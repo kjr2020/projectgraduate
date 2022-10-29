@@ -75,7 +75,7 @@ public class FirstExecutor {
     }
 
     public void publishExecuteTime(String message, long executeTime){
-        String publishedMessage = "Executor, " + message + ", " + executeTime;
+        String publishedMessage = "Executor, " + message + ", " + String.valueOf(executeTime);
         try{
             channel.basicPublish("", executeTimeQueue, null, publishedMessage.getBytes(StandardCharsets.UTF_8));
         }catch (IOException e){

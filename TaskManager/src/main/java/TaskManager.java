@@ -26,9 +26,9 @@ public class TaskManager {
         this.podName = args[0];
         this.executeFile = args[1];
         this.numberOfExecutors = args[2];
-        createTaskQueue();
-        createCompareQueue();
-        createExecuteTimeQueue();
+        Process ps = Runtime.getRuntime().exec("./init.sh exWorkload");
+//        createCompareQueue();
+//        createExecuteTimeQueue();
         init(podName, numberOfExecutors);
     }
 
@@ -52,6 +52,7 @@ public class TaskManager {
             factory.setPort(PORT);
             connection = factory.newConnection();
             channel = connection.createChannel();
+            LOG.info("Connect Success");
         }catch (IOException | TimeoutException e){
             LOG.info("RBMQServer connection failed..");
         }
@@ -59,17 +60,21 @@ public class TaskManager {
 
     public void init(String podName, String numberOfExecutors){
 
-        connectRBMQServer();
+        //connectRBMQServer();
 
         Process process;
         try {
             process = Runtime.getRuntime().exec("kubectl apply -f " + podName +".yaml");
+            LOG.info("Create Task Container");
+            Thread.sleep(5000);
             process.destroy();
         } catch (Exception e) {
             LOG.info("Fail to apply Yaml File.");
         }
         try{
             process = Runtime.getRuntime().exec("kubectl exec " + podName + " -- java -jar ExecutorManager.jar " + numberOfExecutors);
+            LOG.info("Executor Start");
+            Thread.sleep(5000);
             process.destroy();
         } catch (Exception e){
             LOG.info("Fail to Start Execute File.");
@@ -77,33 +82,35 @@ public class TaskManager {
 
         try{
             process = Runtime.getRuntime().exec("kubectl apply -f testContainer.yaml");
+            LOG.info("Create Test Container");
+            Thread.sleep(5000);
             process.destroy();
-        } catch (IOException e){
+        } catch (IOException | InterruptedException e){
             LOG.info("Test Container Create Failed..");
         }
     }
 
-    public void createCompareQueue(){
-        try{
-            channel.queueDeclare(compareQueueName, true, false, false, null);
-        }catch (IOException e){
-            LOG.warn("Compare Queue Declare Failed..");
-        }
-    }
+//    public void createCompareQueue(){
+//        try{
+//            channel.queueDeclare(compareQueueName, true, false, false, null);
+//        }catch (IOException e){
+//            LOG.warn("Compare Queue Declare Failed..");
+//        }
+//    }
+//
+//    public void createExecuteTimeQueue(){
+//        try{
+//            channel.queueDeclare(executeTimeQueue, true, false, false, null);
+//        }catch (IOException e){
+//            LOG.warn("Execute Time Queue Declare Failed..");
+//        }
+//    }
 
-    public void createExecuteTimeQueue(){
-        try{
-            channel.queueDeclare(executeTimeQueue, true, false, false, null);
-        }catch (IOException e){
-            LOG.warn("Execute Time Queue Declare Failed..");
-        }
-    }
-
-    public void createTaskQueue(){
-        try{
-            channel.queueDeclare(taskQueue, true, false, false, null);
-        }catch (IOException e){
-            LOG.warn("Task Queue Declare Failed..");
-        }
-    }
+//    public void createTaskQueue(){
+//        try{
+//            channel.queueDeclare(taskQueue, true, false, false, null);
+//        }catch (IOException e){
+//            LOG.warn("Task Queue Declare Failed..");
+//        }
+//    }
 }

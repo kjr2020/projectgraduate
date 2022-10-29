@@ -22,7 +22,6 @@ public class TaskExecutors {
     private String consumerTag;
     private String executorManageFile = "numberOfExecutors";
 
-    BufferedWriter bw;
     private Process ps;
     private BufferedReader br;
     private int maxNumberOfExecutors;
@@ -52,6 +51,7 @@ public class TaskExecutors {
             factory.setHost(HOST);
             connection = factory.newConnection();
             channel = connection.createChannel();
+            LOG.info(consumerTag +" Start..");
         } catch (IOException | TimeoutException e){
             LOG.warn("Queue Connection Failed..");
         }
