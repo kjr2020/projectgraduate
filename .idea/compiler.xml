@@ -6,8 +6,10 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="ExecutorManager" />
+        <module name="ComparableProject" />
         <module name="TaskManager" />
+        <module name="ComparableProducer" />
+        <module name="ExecutorManager" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

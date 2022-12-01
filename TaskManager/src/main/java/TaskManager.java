@@ -27,6 +27,8 @@ public class TaskManager {
         this.executeFile = args[1];
         this.numberOfExecutors = args[2];
         Process ps = Runtime.getRuntime().exec("./init.sh exWorkload");
+        ps.waitFor();
+        ps.destroy();
 //        createCompareQueue();
 //        createExecuteTimeQueue();
         init(podName, numberOfExecutors);
@@ -86,6 +88,15 @@ public class TaskManager {
             Thread.sleep(5000);
             process.destroy();
         } catch (IOException | InterruptedException e){
+            LOG.info("Test Container Create Failed..");
+        }
+
+        try{
+            process = Runtime.getRuntime().exec("kubectl exec rabbitmq-test -- java -jar TestContainer.jar");
+            LOG.info("Test Container Start");
+            Thread.sleep(5000);
+            process.destroy();
+        } catch( Exception e ){
             LOG.info("Test Container Create Failed..");
         }
     }

@@ -6,6 +6,8 @@
       <list>
         <option value="$PROJECT_DIR$/ExecutorManager/pom.xml" />
         <option value="$PROJECT_DIR$/TaskManager/pom.xml" />
+        <option value="$PROJECT_DIR$/ComparableProject/pom.xml" />
+        <option value="$PROJECT_DIR$/ComparableProducer/pom.xml" />
       </list>
     </option>
   </component>

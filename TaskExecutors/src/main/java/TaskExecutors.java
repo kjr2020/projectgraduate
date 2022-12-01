@@ -65,46 +65,52 @@ public class TaskExecutors {
             LOG.warn("Qos Setting Failed..");
         }
         try {
-            channel.basicConsume(QUEUE_NAME, false, consumerTag, new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    long deliveryTag = envelope.getDeliveryTag();
+            if(channel.messageCount(QUEUE_NAME) == 0) return;
+                channel.basicConsume(QUEUE_NAME, false, consumerTag, new DefaultConsumer(channel) {
+                    @Override
+                    public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                        long deliveryTag = envelope.getDeliveryTag();
 
-                    String message = new String(body, "UTF-8");
-                    String messageArr[] = message.split(", ");
-                    String ligand = messageArr[0];
-                    String pockets = messageArr[1];
+                        String message = new String(body, "UTF-8");
+                        String messageArr[] = message.split(", ");
+                        String ligand = messageArr[0];
+                        String pockets = messageArr[1];
 
-                    try{
-                        ps = Runtime.getRuntime().exec("./autodock_vina.sh ligand/" + ligand + " pockets/" + pockets + " scPDB_coordinates.tsv");
-                        ps.waitFor();
-                        ps.destroy();
-
-                        LOG.info("Executor Num: " + offset + ", Ligand: " + ligand + ", Pockets: " + pockets + " End..");
-                    }catch (InterruptedException e){
-                        LOG.warn("Create Process Failed..");
-                    }
-
-                    channel.basicAck(deliveryTag, false);
-                    try {
-                        br = new BufferedReader(new FileReader(executorManageFile));
-                        maxNumberOfExecutors = Integer.parseInt(br.readLine());
-                        br.close();
-                    }catch (IOException e){
-                        LOG.warn("Read Number Failed..");
-                    }
-
-                    if(offset > maxNumberOfExecutors || channel.messageCount(QUEUE_NAME) == 0){
                         try {
-                            channel.close();
-                            connection.close();
-                            LOG.info(consumerTag + " End Process..");
-                        }catch (TimeoutException e){
-                            LOG.warn("Channel Close Failed..");
+                            ps = Runtime.getRuntime().exec("./autodock_vina.sh ligand/" + ligand + " pockets/" + pockets + " scPDB_coordinates.tsv");
+                            ps.waitFor();
+                            ps.destroy();
+
+                            LOG.info("Executor Num: " + offset + ", Ligand: " + ligand + ", Pockets: " + pockets + " End..");
+                        } catch (InterruptedException e) {
+                            LOG.warn("Create Process Failed..");
+                        }
+
+                        channel.basicAck(deliveryTag, false);
+                        try {
+                            br = new BufferedReader(new FileReader(executorManageFile));
+                            maxNumberOfExecutors = Integer.parseInt(br.readLine());
+                            br.close();
+                        } catch (IOException e) {
+                            LOG.warn("Read Number Failed..");
+                        }
+
+                        if (offset > maxNumberOfExecutors || channel.messageCount(QUEUE_NAME) == 0) {
+                            try {
+                                BufferedWriter bw = new BufferedWriter(new FileWriter("./GraduateResult/Consumer-" + offset));
+                                bw.write(String.valueOf(System.currentTimeMillis()));
+                                bw.flush();
+                                bw.close();
+
+                                channel.close();
+                                connection.close();
+                                LOG.info(consumerTag + " End Process..");
+                            } catch (TimeoutException e) {
+                                LOG.warn("Channel Close Failed..");
+                            }
                         }
                     }
-                }
-            });
+                });
         } catch(IOException e){
             LOG.warn("Consume Failed..");
         }

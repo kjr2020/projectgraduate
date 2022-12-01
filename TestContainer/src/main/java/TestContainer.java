@@ -20,7 +20,7 @@ public class TestContainer {
     static String HOST = "120.70.10.100";
     private static Connection connection;
     private static ConnectionFactory factory;
-    private String consumerTag = Long.toString(System.currentTimeMillis());
+    private String consumerTag = "TestContainer";
     private Process ps;
     private long startTime;
 

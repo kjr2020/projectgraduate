@@ -2,6 +2,8 @@ import com.rabbitmq.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
@@ -36,6 +38,10 @@ public class FirstExecutor {
     public static void main(String args[]){
         try{
             FirstExecutor firstExecutor = new FirstExecutor();
+            BufferedWriter bw = new BufferedWriter(new FileWriter("./GraduateResult/StartTime"));
+            bw.write(String.valueOf(System.currentTimeMillis()));
+            bw.flush();
+            bw.close();
             firstExecutor.consumeTask();
         } catch(Exception e){
             LOG.warn("Can't Create Class..");
@@ -116,7 +122,7 @@ public class FirstExecutor {
                         publishExecuteTime(message, (endTime - startTime));
                     }
 
-                    if((endTime - testCheckTime) >= 300000){
+                    if((endTime - testCheckTime) >= 300_000){
                         testCheckTime = System.currentTimeMillis();
                         testFlag = true;
                     } else{
@@ -127,9 +133,14 @@ public class FirstExecutor {
 
                     if(channel.messageCount(taskQueue) == 0){
                         try {
+                            BufferedWriter bw = new BufferedWriter(new FileWriter("./GraduateResult/Consumer-0"));
+                            bw.write(String.valueOf(System.currentTimeMillis()));
+                            bw.flush();
+                            bw.close();
+                            LOG.info("Consumer0 End Process..");
+
                             channel.close();
                             connection.close();
-                            LOG.info("Consumer0 End Process..");
                         }catch(TimeoutException e){
                             LOG.warn("Connection close Exception..");
                         }
