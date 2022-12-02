@@ -124,7 +124,7 @@ public class ExecutorManager {
                                 //testContainerTime = executeContainerTime = 0;
                             }
 
-                            LOG.info("Real Process: " + executors.size());
+                            LOG.info("Current Process: " + executors.size());
                             channel.basicAck(deliveryTag, false);
                             if(channel.messageCount(QUEUE_NAME) == 0){
                                 try{
@@ -206,11 +206,16 @@ public class ExecutorManager {
             bw.write(String.valueOf(numberOfExecutors));
             bw.flush();
         }
-        if(prevNumberOfExecutors == numberOfExecutors) return;
+        cleanProcesses();
         LOG.info("PrevNumberOfExecutors: " + prevNumberOfExecutors + ", NumberOfExecutors: " + numberOfExecutors);
         bw.close();
     }
 
+    public void cleanProcesses(){
+        executors.forEach(process -> {
+            if(!process.isAlive()) executors.remove(executors.indexOf(process));
+        });
+    }
     public void connectQueueChannel(){
         try {
             factory = new ConnectionFactory();
