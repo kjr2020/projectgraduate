@@ -212,9 +212,12 @@ public class ExecutorManager {
     }
 
     public void cleanProcesses(){
-        executors.forEach(process -> {
-            if(!process.isAlive()) executors.remove(executors.indexOf(process));
-        });
+        LOG.info("Start Clean Process");
+        for(int i = executors.size()-1 ; i >= 0 ; i--){
+            if(!executors.get(i).isAlive()){
+                executors.remove(i);
+            }
+        }
     }
     public void connectQueueChannel(){
         try {
